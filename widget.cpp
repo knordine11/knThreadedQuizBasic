@@ -170,7 +170,7 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
-    this->setWindowTitle("Tuner test");
+    this->setWindowTitle("Thread Quiz test");
     initializeWindow();
     initializeAudio(QMediaDevices::defaultAudioInput());
     initializeAudioOutput(m_devicesOut->defaultAudioOutput());
@@ -276,13 +276,6 @@ void Widget::do_Orientation(int)
     SpeakerThread.start();
 }
 
-void Widget::testSound()
-{
-    qDebug() << "test Sound...";
-    SpeakerThread.exit();
-    SpeakerThread.start();
-}
-
 void Widget::updateKBnote(int kbValue, float acc)
 {
 
@@ -332,6 +325,14 @@ void Widget::Got_Note(int kbValue)
 {
     qDebug() << "Keyboard value: " << kbValue;
     m_audioSource->stop();
+    testSound();
+}
+
+void Widget::testSound()
+{
+    qDebug() << "test Sound...";
+    SpeakerThread.exit();
+    SpeakerThread.start();
 }
 
 void Widget::restartAudioStream()
@@ -350,5 +351,16 @@ void Widget::on_btnStop_clicked()
 void Widget::on_btnNext_clicked()
 {
     qDebug() << "next pressed";
+    qDebug() << "MicThread : " << MicThread.isRunning();
+    qDebug() << "SpeakerThread : " << SpeakerThread.isRunning();
+    qDebug() << "m_Microphone is open: " << m_Microphone->isOpen();
+    do_Orientation(nPos);
+    nPos++;
+    rec_arr_cnt = 0;
+    frame_start = 0;
+    frame_end = 2048;
+    m_Microphone->reset();
+    m_audioSource->reset();
+    restartAudioStream();
 }
 
