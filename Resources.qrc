@@ -1,0 +1,33 @@
+<RCC>
+    <qresource prefix="/data">
+        <file>v_sounds/click2.wav</file>
+        <file>v_sounds/click3.wav</file>
+        <file>v_sounds/click4.wav</file>
+        <file>v_sounds/click5.wav</file>
+        <file>v_sounds/click5L.wav</file>
+        <file>v_sounds/click6.wav</file>
+        <file>v_sounds/click6L.wav</file>
+        <file>v_sounds/v43.wav</file>
+        <file>v_sounds/v44.wav</file>
+        <file>v_sounds/v45.wav</file>
+        <file>v_sounds/v46.wav</file>
+        <file>v_sounds/v47.wav</file>
+        <file>v_sounds/v48.wav</file>
+        <file>v_sounds/v49.wav</file>
+        <file>v_sounds/v50.wav</file>
+        <file>v_sounds/v51.wav</file>
+        <file>v_sounds/v52.wav</file>
+        <file>v_sounds/v53.wav</file>
+        <file>v_sounds/v54.wav</file>
+        <file>v_sounds/v55.wav</file>
+        <file>v_sounds/v56.wav</file>
+        <file>v_sounds/v57.wav</file>
+        <file>v_sounds/v58.wav</file>
+        <file>v_sounds/v59.wav</file>
+        <file>v_sounds/v60.wav</file>
+        <file>v_sounds/v61.wav</file>
+        <file>v_sounds/v62.wav</file>
+        <file>config.txt</file>
+        <file>lessons.txt</file>
+    </qresource>
+</RCC>

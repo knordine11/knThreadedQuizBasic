@@ -1,0 +1,3 @@
+image/down-arrow.png,graphic path
+sound_v/,sound path
+2, Current Lesson
