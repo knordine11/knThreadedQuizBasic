@@ -354,13 +354,19 @@ void Widget::on_btnNext_clicked()
     qDebug() << "MicThread : " << MicThread.isRunning();
     qDebug() << "SpeakerThread : " << SpeakerThread.isRunning();
     qDebug() << "m_Microphone is open: " << m_Microphone->isOpen();
-    do_Orientation(nPos);
-    nPos++;
+    // zero out rec_arr with each mic get
+    for(int i = 0; i < 200000; i++)
+    {
+        rec_arr[i] = 0;
+    }
     rec_arr_cnt = 0;
     frame_start = 0;
     frame_end = 2048;
     m_Microphone->reset();
     m_audioSource->reset();
     restartAudioStream();
+    QThread::msleep(100);
+    do_Orientation(nPos);
+    nPos++;
 }
 
