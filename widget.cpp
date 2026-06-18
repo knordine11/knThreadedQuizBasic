@@ -27,6 +27,7 @@ int orientation [21] = {1,2,3,4,5,6,7,8,1,8,1,8,1,8,7,6,5,4,3,2,1};
 QMap<QString, int> tonic_map = {
     {"G3", 43}, {"A3", 45}, {"B3", 47}, {"C4", 48}, {"D4", 50}, {"A4", 52}, {"B4", 54}, {"C5", 55}
 };
+QList<QString> notePlayList;
 Speaker speaker;
 QThread speakerThread;
 extern QList<QByteArray> rawRecArrays;
@@ -174,11 +175,14 @@ Widget::Widget(QWidget *parent)
     initializeWindow();
     initializeAudio(QMediaDevices::defaultAudioInput());
     initializeAudioOutput(m_devicesOut->defaultAudioOutput());
+    ui->btnStop->setVisible(false);
     FileLoader::ReadConfig();
     FileLoader::ReadLesson();
     FileLoader::GetRandomTestSet(gTestGroup[curLessonInt]);
-    connect(this,&Widget::halt,this,&Widget::testSound, Qt::DirectConnection);
+
     FftStuff fts;
+    orientationFlag = true;
+    connect(this,&Widget::halt,this,&Widget::testSound, Qt::DirectConnection);
     connect(&ftw, &FftStuff::valueChanged,this, &Widget::updateKBnote, Qt::QueuedConnection);
     connect(&ftw, &FftStuff::on_foundNote,this, &Widget::Got_Note, Qt::QueuedConnection);
     connect(m_Microphone, &Microphone::on_TimeOut, this, &Widget::TimeOut);
@@ -250,6 +254,8 @@ void Widget::on_btnStart_clicked()
     restartAudioStream();
     qDebug() << "start pushed...";
     ui->btnStart->setVisible(false);
+    ui->txtPlayed->setText("0");
+    ui->txtGood->setText("0");
     qDebug() << "starting...";
     curLessonInt = currentlesson.toInt();
     // get sound array set
@@ -264,21 +270,8 @@ void Widget::on_btnStart_clicked()
     nPos++;
 }
 
-void Widget::do_Orientation(int)
-{
-    m_Speaker->newTest( rawRecArrays[orientation[nPos] - 1]);
-    qDebug() << "orientation value: " << orientation[nPos] - 1;
-    m_Speaker->stop();
-    m_Speaker->start();
-    m_audioOutput->stop();
-
-    m_audioOutput->start(m_Speaker.data());
-    SpeakerThread.start();
-}
-
 void Widget::updateKBnote(int kbValue, float acc)
 {
-
     int letter = kbValue%12;
     int octaveValue = kbValue/12;
     QString theNote = note_letters[letter] + QString::number(octaveValue);
@@ -291,6 +284,28 @@ void Widget::updateKBnote(int kbValue, float acc)
     ui->lbTuner->repaint();
 }
 
+void Widget::do_Orientation(int)
+{
+    m_Speaker->newTest( rawRecArrays[orientation[nPos] - 1]);
+    qDebug() << "orientation value: " << orientation[nPos] - 1;
+    m_Speaker->stop();
+    m_Speaker->start();
+    m_audioOutput->stop();
+    m_audioOutput->start(m_Speaker.data());
+    SpeakerThread.start();
+}
+
+void Widget::do_Quiz(int)
+{
+    m_Speaker->newTest( rawRecArrays[testNotes[nPos] - 1]);
+    qDebug() << "testNotes value: " << testNotes[nPos] - 1;
+    m_Speaker->stop();
+    m_Speaker->start();
+    m_audioOutput->stop();
+    m_audioOutput->start(m_Speaker.data());
+    SpeakerThread.start();
+}
+
 void Widget::stop_mic()
 {
     m_audioSource->reset();
@@ -299,32 +314,28 @@ void Widget::stop_mic()
 
 void Widget::TimeOut()
 {
-    MicThread.terminate();
+    qDebug() << "continuing...";
+    for(int i = 0; i < 200000; i++)
+    {
+        rec_arr[i] = 0;
+    }
     rec_arr_cnt = 0;
-    m_Microphone->reset();
-    m_audioSource->reset();
     frame_start = 0;
     frame_end = 2048;
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::question(this, "Timed Out", "Continue?",
-                                  QMessageBox::Yes|QMessageBox::No);
-    if (reply == QMessageBox::Yes) {
-        qDebug() << "continuing...";
-
-        m_Microphone->moveToThread(&MicThread);
-        MicThread.setObjectName("MicThread");
-        MicThread.start();
-        m_audioSource->start(m_Microphone);
-    } else {
-        qDebug() << "No was clicked";
-        QApplication::quit();
-    }
+    m_Microphone->reset();
+    m_audioSource->reset();
+    restartAudioStream();
+    QThread::msleep(100);
+    nPos--;
+    do_Orientation(nPos);
+    nPos++;
 }
 
 void Widget::Got_Note(int kbValue)
 {
-    qDebug() << "Keyboard value: " << kbValue;
+    qDebug() << "Keyboard value heard: " << kbValue;
     m_audioSource->stop();
+    // qDebug()<< ">>>>>>Note Played = " << kbValue;
     testSound();
 }
 
@@ -366,7 +377,24 @@ void Widget::on_btnNext_clicked()
     m_audioSource->reset();
     restartAudioStream();
     QThread::msleep(100);
-    do_Orientation(nPos);
+    if (orientationFlag == true)
+    {
+        do_Orientation(nPos);
+        if(nPos == 20)
+        {
+            orientationFlag=false;
+            nPos = 0;
+        }
+    } else {
+        do_Quiz(nPos);
+        if(nPos == 19)
+        {
+            orientationFlag=true;
+            qDebug() << "test complete";
+            ui->btnNext->setVisible(false);
+            nPos = 0;
+        }
+    }
     nPos++;
 }
 

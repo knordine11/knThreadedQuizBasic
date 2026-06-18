@@ -77,7 +77,9 @@ public:
     QMediaDevices *m_devicesOut = nullptr;
     QScopedPointer<Speaker> m_Speaker;
     QScopedPointer<QAudioSink> m_audioOutput;
+    bool orientationFlag;
     void do_Orientation(int);
+    void do_Quiz(int);
     int tonicNote;
     int nPos;
 
@@ -97,7 +99,6 @@ public slots:
 private slots:
     void on_btnStart_clicked();
     void on_btnStop_clicked();
-
     void on_btnNext_clicked();
 
 private:
