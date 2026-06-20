@@ -81,16 +81,18 @@ public:
     void do_Orientation(int);
     void do_Quiz(int);
     int tonicNote;
+    int playedCnt;
+    int goodCnt;
     int nPos;
+    int kbPlayed;
 
 protected:
     void paintEvent(QPaintEvent *event);
 
 signals:
-    void halt();
 
 public slots:
-    void testSound();
+    void stopSound();
     void updateKBnote(int kbValue, float acc);
     void stop_mic();
     void TimeOut();

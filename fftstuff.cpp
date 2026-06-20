@@ -192,6 +192,7 @@ void FftStuff::DoIt(int beg, int lengh)
         qDebug()<< ">>>>>>note value = " << noteC_no;
         qDebug()<< ">>>>>>note acc = " << note_acc;
         qDebug()<< ">>>>>>kbValue = " << kbValue;
+        qDebug()<< ">>>>>>kbValue = " << kbValue;
         emit on_foundNote(kbValue);
 
     }

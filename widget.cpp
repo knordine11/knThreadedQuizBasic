@@ -27,12 +27,13 @@ int orientation [21] = {1,2,3,4,5,6,7,8,1,8,1,8,1,8,7,6,5,4,3,2,1};
 QMap<QString, int> tonic_map = {
     {"G3", 43}, {"A3", 45}, {"B3", 47}, {"C4", 48}, {"D4", 50}, {"A4", 52}, {"B4", 54}, {"C5", 55}
 };
-QList<QString> notePlayList;
+QList<int> kbNotePlayLists;
 Speaker speaker;
 QThread speakerThread;
 extern QList<QByteArray> rawRecArrays;
 FftStuff ftw;
 int accValue = 0;
+extern int nnDiff;;
 
 
 Microphone::Microphone(const QAudioFormat &format) : m_format(format) {
@@ -182,7 +183,6 @@ Widget::Widget(QWidget *parent)
 
     FftStuff fts;
     orientationFlag = true;
-    connect(this,&Widget::halt,this,&Widget::testSound, Qt::DirectConnection);
     connect(&ftw, &FftStuff::valueChanged,this, &Widget::updateKBnote, Qt::QueuedConnection);
     connect(&ftw, &FftStuff::on_foundNote,this, &Widget::Got_Note, Qt::QueuedConnection);
     connect(m_Microphone, &Microphone::on_TimeOut, this, &Widget::TimeOut);
@@ -225,6 +225,30 @@ void Widget::initializeAudioOutput(const QAudioDevice &deviceInfo)
     m_audioOutput.reset(new QAudioSink(deviceInfo, format));
 }
 
+void buildkbNotePlayList(int tonicNote)
+{
+    //QList<int> kbNotePlayLists;
+    int kbNoteFileName = tonicNote;
+    kbNotePlayLists.append(kbNoteFileName);
+    kbNoteFileName = tonicNote + 2;
+    kbNotePlayLists.append(kbNoteFileName);
+    kbNoteFileName = tonicNote + 4;
+    kbNotePlayLists.append(kbNoteFileName);
+    kbNoteFileName = tonicNote + 5;
+    kbNotePlayLists.append(kbNoteFileName);
+    kbNoteFileName = tonicNote + 7;
+    kbNotePlayLists.append(kbNoteFileName);
+    kbNoteFileName = tonicNote + 9;
+    kbNotePlayLists.append(kbNoteFileName);
+    kbNoteFileName = tonicNote + 11;
+    kbNotePlayLists.append(kbNoteFileName);
+    kbNoteFileName = tonicNote + 12;
+    kbNotePlayLists.append(kbNoteFileName);
+
+
+    qDebug() << kbNotePlayLists;
+}
+
 void Widget::paintEvent(QPaintEvent * /* event */)
 {
     QPixmap pix(100,60);
@@ -264,6 +288,9 @@ void Widget::on_btnStart_clicked()
     qDebug() << gNote[curLessonInt-1];
     FileLoader files;
     files.GetFileList(tonicNote);
+    buildkbNotePlayList(tonicNote);
+    playedCnt = 0;
+    goodCnt = 0;
     nPos = 0;
     m_Speaker->moveToThread(&SpeakerThread);
     do_Orientation(nPos);
@@ -286,6 +313,7 @@ void Widget::updateKBnote(int kbValue, float acc)
 
 void Widget::do_Orientation(int)
 {
+    kbPlayed = kbNotePlayLists[orientation[nPos] - 1];
     m_Speaker->newTest( rawRecArrays[orientation[nPos] - 1]);
     qDebug() << "orientation value: " << orientation[nPos] - 1;
     m_Speaker->stop();
@@ -297,6 +325,7 @@ void Widget::do_Orientation(int)
 
 void Widget::do_Quiz(int)
 {
+    kbPlayed = kbNotePlayLists[testNotes[nPos] - 1];
     m_Speaker->newTest( rawRecArrays[testNotes[nPos] - 1]);
     qDebug() << "testNotes value: " << testNotes[nPos] - 1;
     m_Speaker->stop();
@@ -314,6 +343,15 @@ void Widget::stop_mic()
 
 void Widget::TimeOut()
 {
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Timed Out", "Continue?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if (reply == QMessageBox::Yes) {
+        qDebug() << "continuing...";
+    } else {
+        qDebug() << "No was clicked";
+        QApplication::quit();
+    }
     qDebug() << "continuing...";
     for(int i = 0; i < 200000; i++)
     {
@@ -333,13 +371,18 @@ void Widget::TimeOut()
 
 void Widget::Got_Note(int kbValue)
 {
-    qDebug() << "Keyboard value heard: " << kbValue;
+    playedCnt++;
     m_audioSource->stop();
-    // qDebug()<< ">>>>>>Note Played = " << kbValue;
-    testSound();
+    stopSound();
+    ui->txtPlayed->setText(QString::number(playedCnt));
+    if (kbValue == kbPlayed)
+    {
+        goodCnt++;
+        ui->txtGood->setText(QString::number(goodCnt));
+    }
 }
 
-void Widget::testSound()
+void Widget::stopSound()
 {
     qDebug() << "test Sound...";
     SpeakerThread.exit();
@@ -383,6 +426,8 @@ void Widget::on_btnNext_clicked()
         if(nPos == 20)
         {
             orientationFlag=false;
+            playedCnt = 0;
+            goodCnt = 0;
             nPos = 0;
         }
     } else {
