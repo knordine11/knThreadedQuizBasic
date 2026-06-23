@@ -103,6 +103,8 @@ private slots:
     void on_btnStop_clicked();
     void on_btnNext_clicked();
 
+    void on_sldDuration_valueChanged(int value);
+
 private:
     void initializeWindow();
     void initializeAudio(const QAudioDevice &deviceInfo);

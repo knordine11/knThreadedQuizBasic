@@ -347,6 +347,7 @@ void Widget::stop_mic()
 
 void Widget::TimeOut()
 {
+    m_audioSource->suspend();
     QMessageBox::StandardButton reply;
     reply = QMessageBox::question(this, "Timed Out", "Continue?",
                                   QMessageBox::Yes|QMessageBox::No);
@@ -357,6 +358,7 @@ void Widget::TimeOut()
         QApplication::quit();
     }
     qDebug() << "continuing...";
+    m_audioSource->resume();
     for(int i = 0; i < 200000; i++)
     {
         rec_arr[i] = 0;
@@ -376,15 +378,14 @@ void Widget::TimeOut()
 void Widget::Got_Note(int kbValue)
 {
     playedCnt++;
-    m_audioSource->stop();
-    stopSound();
+    m_audioSource->stop();    
     ui->txtPlayed->setText(QString::number(playedCnt));
     if (kbValue == kbPlayed)
     {
         goodCnt++;
         ui->txtGood->setText(QString::number(goodCnt));
     }
-
+    stopSound();
     QThread::msleep(displayDuration);
     if(nPos < 21 and orientationFlag)
     {
@@ -401,6 +402,59 @@ void Widget::stopSound()
     qDebug() << "test Sound...";
     SpeakerThread.exit();
     SpeakerThread.start();
+
+    if(orientationFlag and nPos == 21)
+    {
+        qDebug() << ">>>>>in complets block";
+        MicThread.exit();
+        float scorePercent = (goodCnt * 100) / playedCnt;
+        ui->txtOrientationScore->setText(QString::number(scorePercent) + "%");
+        orientationFlag = false;
+        m_audioSource->suspend();
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, "Orientarion Complete", "Continue?",
+                                      QMessageBox::Yes|QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            qDebug() << "continuing...";
+        } else {
+            qDebug() << "No was clicked";
+            QApplication::quit();
+        }
+        m_audioSource->resume();
+        playedCnt = 0;
+        goodCnt = 0;
+        nPos = 0;
+        ui->txtPlayed->setText(QString::number(playedCnt));
+        ui->txtGood->setText(QString::number(goodCnt));
+        MicThread.start();
+    }
+    if(!orientationFlag and nPos == 20)
+    {
+        MicThread.exit();
+        SpeakerThread.exit();
+        float scorePercent = (goodCnt * 100) / playedCnt;
+        ui->txtLessonScore->setText(QString::number(scorePercent) + "%");
+        m_audioSource->suspend();
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question(this, "lesson Complete", "Continue?",
+                                      QMessageBox::Yes|QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            qDebug() << "continuing...";
+        } else {
+            qDebug() << "No was clicked";
+            QApplication::quit();
+        }
+        m_audioSource->resume();
+        playedCnt = 0;
+        goodCnt = 0;
+        nPos = 0;
+        orientationFlag=true;
+        qDebug() << "test complete";
+        m_audioOutput->suspend();
+        m_audioSource->suspend();
+        MicThread.terminate();
+        SpeakerThread.terminate();
+    }
 }
 
 void Widget::restartAudioStream()
@@ -434,52 +488,22 @@ void Widget::on_btnNext_clicked()
     m_audioSource->reset();
     restartAudioStream();
     QThread::msleep(100);
-    if (orientationFlag == true)
+    if (orientationFlag)
     {
         do_Orientation(nPos);
-        if(nPos == 20)
-        {
-            MicThread.exit();
-            float scorePercent = (goodCnt * 100) / playedCnt;
-            ui->txtOrientationScore->setText(QString::number(scorePercent) + "%");
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question(this, "Orientarion Complete", "Continue?",
-                                          QMessageBox::Yes|QMessageBox::No);
-            if (reply == QMessageBox::Yes) {
-                qDebug() << "continuing...";
-            } else {
-                qDebug() << "No was clicked";
-                QApplication::quit();
-            }
-            orientationFlag=false;
-            playedCnt = 0;
-            goodCnt = 0;
-            nPos = 0;
-            MicThread.start();
-        }
-    } else {
-        do_Quiz(nPos);
-        if(nPos == 21)
-        {
-            MicThread.exit();
-            SpeakerThread.exit();
-            float scorePercent = (goodCnt * 100) / playedCnt;
-            ui->txtLessonScore->setText(QString::number(scorePercent) + "%");
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question(this, "lesson Complete", "Continue?",
-                                          QMessageBox::Yes|QMessageBox::No);
-            if (reply == QMessageBox::Yes) {
-                qDebug() << "continuing...";
-            } else {
-                qDebug() << "No was clicked";
-                QApplication::quit();
-            }
-            orientationFlag=true;
-            qDebug() << "test complete";
-            ui->btnNext->setVisible(false);
-            nPos = 0;
-        }
     }
+    else
+    {
+        do_Quiz(nPos);
+    }
+
     nPos++;
+}
+
+
+void Widget::on_sldDuration_valueChanged(int value)
+{
+    qDebug() << "--->value = " << value;
+    displayDuration = value*1000;
 }
 
