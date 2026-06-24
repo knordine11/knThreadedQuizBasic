@@ -28,8 +28,6 @@ QMap<QString, int> tonic_map = {
     {"G3", 43}, {"A3", 45}, {"B3", 47}, {"C4", 48}, {"D4", 50}, {"A4", 52}, {"B4", 54}, {"C5", 55}
 };
 QList<int> kbNotePlayLists;
-Speaker speaker;
-QThread speakerThread;
 extern QList<QByteArray> rawRecArrays;
 FftStuff ftw;
 int accValue = 0;
@@ -180,6 +178,7 @@ Widget::Widget(QWidget *parent)
     ui->btnNext->setVisible(false);
     FileLoader::ReadConfig();
     FileLoader::ReadLesson();
+    curLessonInt = currentlesson.toInt() - 1;
     FileLoader::GetRandomTestSet(gTestGroup[curLessonInt]);
     // QString temp = "Lesson #" + currentlesson + " Key " + gKey[curLessonInt-1]
     //                + " Test Notes " + gTestGroup[curLessonInt];
@@ -187,6 +186,7 @@ Widget::Widget(QWidget *parent)
 
     FftStuff fts;
     orientationFlag = true;
+    lessonDoneFlag = false;
     connect(&ftw, &FftStuff::valueChanged,this, &Widget::updateKBnote, Qt::QueuedConnection);
     connect(&ftw, &FftStuff::on_foundNote,this, &Widget::Got_Note, Qt::QueuedConnection);
     connect(m_Microphone, &Microphone::on_TimeOut, this, &Widget::TimeOut);
@@ -285,11 +285,10 @@ void Widget::on_btnStart_clicked()
     ui->txtPlayed->setText("0");
     ui->txtGood->setText("0");
     qDebug() << "starting...";
-    curLessonInt = currentlesson.toInt();
     // get sound array set
-    tonicNote = tonic_map[gNote[curLessonInt-1]];
+    tonicNote = tonic_map[gNote[curLessonInt]];
     qDebug() << tonicNote;
-    qDebug() << gNote[curLessonInt-1];
+    qDebug() << gNote[curLessonInt];
     FileLoader files;
     files.GetFileList(tonicNote);
     buildkbNotePlayList(tonicNote);
@@ -339,6 +338,31 @@ void Widget::do_Quiz(int)
     SpeakerThread.start();
 }
 
+void Widget::getNextLesson()
+{
+    curLessonInt++;
+    qDebug() << "testIndex value: " << curLessonInt;
+    FileLoader files;
+    files.GetFileList(tonicNote);
+    buildkbNotePlayList(tonicNote);
+    ui->lbCurrentLesson->setText(" Test Notes " + gTestGroup[curLessonInt]);
+    ui->lbCurrentLesson->repaint();
+    // get sound array set
+    tonicNote = tonic_map[gNote[curLessonInt]];
+    qDebug() << tonicNote;
+    qDebug() << gNote[curLessonInt];
+
+    QThread::msleep(displayDuration);
+    if(nPos < 21 and orientationFlag)
+    {
+        ui->btnNext->click();
+    }
+    if(nPos < 20 and !orientationFlag)
+    {
+        ui->btnNext->click();
+    }
+}
+
 void Widget::stop_mic()
 {
     m_audioSource->reset();
@@ -355,6 +379,8 @@ void Widget::TimeOut()
         qDebug() << "continuing...";
     } else {
         qDebug() << "No was clicked";
+        m_audioOutput.reset();
+        QThread::msleep(100);
         QApplication::quit();
     }
     qDebug() << "continuing...";
@@ -371,7 +397,15 @@ void Widget::TimeOut()
     restartAudioStream();
     QThread::msleep(100);
     nPos--;
-    do_Orientation(nPos);
+    if (orientationFlag)
+    {
+        do_Orientation(nPos);
+    }
+    else
+    {
+        do_Quiz(nPos);
+    }
+
     nPos++;
 }
 
@@ -430,8 +464,8 @@ void Widget::stopSound()
     }
     if(!orientationFlag and nPos == 20)
     {
-        MicThread.exit();
-        SpeakerThread.exit();
+        // MicThread.exit();
+        // SpeakerThread.exit();
         float scorePercent = (goodCnt * 100) / playedCnt;
         ui->txtLessonScore->setText(QString::number(scorePercent) + "%");
         m_audioSource->suspend();
@@ -449,11 +483,13 @@ void Widget::stopSound()
         goodCnt = 0;
         nPos = 0;
         orientationFlag=true;
+        m_Microphone->start();
+        m_Speaker->start();
+        //lessonDoneFlag = true;
         qDebug() << "test complete";
-        m_audioOutput->suspend();
-        m_audioSource->suspend();
-        MicThread.terminate();
-        SpeakerThread.terminate();
+        qDebug() << "testIndex value: " << curLessonInt;
+        // curLessonInt++;
+        getNextLesson();
     }
 }
 
@@ -472,6 +508,11 @@ void Widget::on_btnStop_clicked()
 
 void Widget::on_btnNext_clicked()
 {
+    // if(lessonDoneFlag)
+    // {
+    //     QThread::sleep(5);
+    //     QApplication::quit();
+    // }
     qDebug() << "next pressed";
     qDebug() << "MicThread : " << MicThread.isRunning();
     qDebug() << "SpeakerThread : " << SpeakerThread.isRunning();

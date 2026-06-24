@@ -69,7 +69,7 @@ void FileLoader::ReadLesson()
         qCritical("Failed to open");
     }
     QTextStream stream(&file);
-    stream.readLine();
+    stream.readLine(); // dump 0 line start with 1
     while(!stream.atEnd())
     {
         QString line = stream.readLine();

@@ -78,8 +78,10 @@ public:
     QScopedPointer<Speaker> m_Speaker;
     QScopedPointer<QAudioSink> m_audioOutput;
     bool orientationFlag;
+    bool lessonDoneFlag;
     void do_Orientation(int);
     void do_Quiz(int);
+    void getNextLesson();
     int tonicNote;
     int playedCnt;
     int goodCnt;
@@ -110,9 +112,6 @@ private:
     void initializeAudio(const QAudioDevice &deviceInfo);
     void initializeAudioOutput(const QAudioDevice &deviceInfo);
     void restartAudioStream();
-
-private:
-    // Owned by layout
     QMediaDevices *m_devices = nullptr;
     Microphone *m_Microphone;
     QAudioSource *m_audioSource;
