@@ -81,6 +81,8 @@ public:
     bool lessonDoneFlag;
     void do_Orientation(int);
     void do_Quiz(int);
+    void play_next_note();
+    void timeoutRetry();
     void getNextLesson();
     int tonicNote;
     int playedCnt;
@@ -96,14 +98,12 @@ signals:
 public slots:
     void stopSound();
     void updateKBnote(int kbValue, float acc);
-    void stop_mic();
+    // void stop_mic();
     void TimeOut();
     void Got_Note(int kbValue);
 
 private slots:
     void on_btnStart_clicked();
-    void on_btnStop_clicked();
-    void on_btnNext_clicked();
 
     void on_sldDuration_valueChanged(int value);
 

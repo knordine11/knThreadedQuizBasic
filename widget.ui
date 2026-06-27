@@ -47,24 +47,6 @@
     <string/>
    </property>
   </widget>
-  <widget class="QPushButton" name="btnNext">
-   <property name="geometry">
-    <rect>
-     <x>171</x>
-     <y>161</y>
-     <width>56</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Next</string>
-   </property>
-  </widget>
   <widget class="QPushButton" name="btnStart">
    <property name="geometry">
     <rect>
@@ -81,24 +63,6 @@
    </property>
    <property name="text">
     <string>Start</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnStop">
-   <property name="geometry">
-    <rect>
-     <x>111</x>
-     <y>161</y>
-     <width>56</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>14</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Stop</string>
    </property>
   </widget>
   <widget class="QLabel" name="label">

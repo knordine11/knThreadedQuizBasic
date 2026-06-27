@@ -29,6 +29,7 @@ public:
     static void ReadLesson();
     void GetFileList(int tonicNote);
     static void GetRandomTestSet(QString randomNotes);
+    static void updateConfigLesson(int value);
     QString filenameChosen;
     QString filename;
     QAudioOutput *m_audioOutput = nullptr;

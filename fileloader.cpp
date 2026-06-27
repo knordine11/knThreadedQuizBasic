@@ -145,3 +145,21 @@ void FileLoader::GetRandomTestSet(QString randomNotes)
         testNotes.append(value);
     }
 }
+
+void FileLoader::updateConfigLesson(int value)
+{
+    QString lessonNow = QString::number(value) + ", Current Lesson/n";
+    QFile file(":/data/config.txt");
+    if(!file.exists())
+    {
+        qInfo() << "file not found";
+    }
+    if(!file.open(QIODevice::WriteOnly))
+    {
+        qCritical("Open failed");
+    }
+    QTextStream stream(&file);
+    stream.seek(2);
+    stream << lessonNow;
+    file.close();
+}
