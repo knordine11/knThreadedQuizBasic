@@ -20,9 +20,11 @@ extern int frame_start;
 extern int frame_size;
 extern int frame_end;
 extern int rec_arr_end;
+extern QString currentlesson;
+//extern QString gNote;
 const QList <QString> note_letters = {"C", "C#", "D", "D#", "E",
                                      "F", "F#", "G", "G#", "A", "A#", "B" };
-int curLessonInt = 0;
+int curLessonInt;
 int orientation [21] = {1,2,3,4,5,6,7,8,1,8,1,8,1,8,7,6,5,4,3,2,1};
 QMap<QString, int> tonic_map = {
     {"G3", 43}, {"A3", 45}, {"B3", 47}, {"C4", 48}, {"D4", 50}, {"A4", 52}, {"B4", 54}, {"C5", 55}
@@ -176,15 +178,18 @@ Widget::Widget(QWidget *parent)
     initializeAudioOutput(m_devicesOut->defaultAudioOutput());
     FileLoader::ReadConfig();
     FileLoader::ReadLesson();
+    qDebug() << "currentlesson = " << currentlesson;
     curLessonInt = currentlesson.toInt() - 1;
     FileLoader::GetRandomTestSet(gTestGroup[curLessonInt]);
-    // QString temp = "Lesson #" + currentlesson + " Key " + gKey[curLessonInt-1]
-    //                + " Test Notes " + gTestGroup[curLessonInt];
-    ui->lbCurrentLesson->setText(" Test Notes " + gTestGroup[curLessonInt]);
+    QString temp = "Key " +  gNote[curLessonInt];
+    ui->lbCurrentLesson->setText(temp + "  Test Notes " + gTestGroup[curLessonInt]);
 
     FftStuff fts;
     orientationFlag = true;
-    lessonDoneFlag = false;
+    m_Microphone->moveToThread(&MicThread);
+    MicThread.setObjectName("MicThread");
+    MicThread.start();
+    m_Speaker->moveToThread(&SpeakerThread);
     connect(&ftw, &FftStuff::valueChanged,this, &Widget::updateKBnote, Qt::QueuedConnection);
     connect(&ftw, &FftStuff::on_foundNote,this, &Widget::Got_Note, Qt::QueuedConnection);
     connect(m_Microphone, &Microphone::on_TimeOut, this, &Widget::TimeOut);
@@ -274,10 +279,6 @@ void Widget::paintEvent(QPaintEvent * /* event */)
 
 void Widget::on_btnStart_clicked()
 {
-    m_Microphone->moveToThread(&MicThread);
-    MicThread.setObjectName("MicThread");
-    MicThread.start();
-
     restartAudioStream();
     qDebug() << "start pushed...";
     ui->btnStart->setVisible(false);
@@ -294,7 +295,6 @@ void Widget::on_btnStart_clicked()
     playedCnt = 0;
     goodCnt = 0;
     nPos = 0;
-    m_Speaker->moveToThread(&SpeakerThread);
     do_Orientation(nPos);
     nPos++;
 }
@@ -313,7 +313,7 @@ void Widget::updateKBnote(int kbValue, float acc)
     ui->lbTuner->repaint();
 }
 
-void Widget::do_Orientation(int)
+void Widget::do_Orientation(int nPos)
 {
     kbPlayed = kbNotePlayLists[orientation[nPos] - 1];
     m_Speaker->newTest( rawRecArrays[orientation[nPos] - 1]);
@@ -325,7 +325,7 @@ void Widget::do_Orientation(int)
     SpeakerThread.start();
 }
 
-void Widget::do_Quiz(int)
+void Widget::do_Quiz(int nPos)
 {
     kbPlayed = kbNotePlayLists[testNotes[nPos] - 1];
     m_Speaker->newTest( rawRecArrays[testNotes[nPos] - 1]);
@@ -367,42 +367,34 @@ void Widget::play_next_note()
     nPos++;
 }
 
-void Widget::getNextLesson()
+void Widget::getNextLesson(int indexVal)
 {
-    curLessonInt++;
+    curLessonInt = indexVal++;
     // update config to new lesson
     FileLoader::updateConfigLesson(curLessonInt);
     qDebug() << "testIndex value: " << curLessonInt;
     FileLoader files;
     FileLoader::GetRandomTestSet(gTestGroup[curLessonInt]);
+    qDebug() << "gTestGroup values: " << gTestGroup[curLessonInt];
+    qDebug() << gTestGroup;
     files.GetFileList(tonicNote);
     buildkbNotePlayList(tonicNote);
-    ui->lbCurrentLesson->setText(" Test Notes " + gTestGroup[curLessonInt]);
+    QString temp = "Key " +  gNote[curLessonInt];
+    ui->lbCurrentLesson->setText(temp + "  Test Notes " + gTestGroup[curLessonInt]);
     ui->lbCurrentLesson->repaint();
     // get sound array set
     tonicNote = tonic_map[gNote[curLessonInt]];
     qDebug() << tonicNote;
     qDebug() << gNote[curLessonInt];
     orientationFlag=true;
-    m_Microphone->start();
+    restartAudioStream();
+    // m_Microphone->start();
     m_Speaker->start();
 
     QThread::msleep(100);
-    if(nPos < 21 and orientationFlag)
-    {
-        play_next_note();
-    }
-    if(nPos < 20 and !orientationFlag)
-    {
-        play_next_note();
-    }
+    nPos = 0;
+    do_Orientation(nPos);
 }
-
-// void Widget::stop_mic()
-// {
-//     m_audioSource->reset();
-//     m_audioSource->start();
-// }
 
 void Widget::TimeOut()
 {
@@ -444,7 +436,6 @@ void Widget::timeoutRetry()
     {
         do_Quiz(nPos);
     }
-
     nPos++;
 }
 
@@ -512,20 +503,21 @@ void Widget::stopSound()
                                       QMessageBox::Yes|QMessageBox::No);
         if (reply == QMessageBox::Yes) {
             qDebug() << "continuing...";
+            m_audioSource->resume();
+            m_Microphone->reset();
+            m_audioSource->reset();
+            playedCnt = 0;
+            goodCnt = 0;
+            nPos = 0;
+
+            qDebug() << "test complete";
+            qDebug() << "testIndex value: " << curLessonInt;
+            m_audioSource->resume();
+            getNextLesson(currentlesson.toInt());
         } else {
             qDebug() << "No was clicked";
             QApplication::quit();
-        }
-        m_audioSource->resume();
-        m_Microphone->reset();
-        m_audioSource->reset();
-        playedCnt = 0;
-        goodCnt = 0;
-        nPos = 0;
-
-        qDebug() << "test complete";
-        qDebug() << "testIndex value: " << curLessonInt;
-        getNextLesson();
+        }        
     }
 }
 

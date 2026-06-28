@@ -78,12 +78,11 @@ public:
     QScopedPointer<Speaker> m_Speaker;
     QScopedPointer<QAudioSink> m_audioOutput;
     bool orientationFlag;
-    bool lessonDoneFlag;
     void do_Orientation(int);
     void do_Quiz(int);
     void play_next_note();
     void timeoutRetry();
-    void getNextLesson();
+    void getNextLesson(int);
     int tonicNote;
     int playedCnt;
     int goodCnt;
@@ -98,7 +97,6 @@ signals:
 public slots:
     void stopSound();
     void updateKBnote(int kbValue, float acc);
-    // void stop_mic();
     void TimeOut();
     void Got_Note(int kbValue);
 

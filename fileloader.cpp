@@ -146,20 +146,41 @@ void FileLoader::GetRandomTestSet(QString randomNotes)
     }
 }
 
-void FileLoader::updateConfigLesson(int value)
+void FileLoader::updateConfigLesson(int value)  // updates lesson number in config.txt
 {
-    QString lessonNow = QString::number(value) + ", Current Lesson/n";
+    QString lessonNow = QString::number(value + 1) + ",Current Lesson";
     QFile file(":/data/config.txt");
     if(!file.exists())
     {
         qInfo() << "file not found";
     }
-    if(!file.open(QIODevice::WriteOnly))
+    if(!file.open(QIODevice::ReadOnly))
     {
         qCritical("Open failed");
     }
     QTextStream stream(&file);
-    stream.seek(2);
-    stream << lessonNow;
+    QString line1 = stream.readLine();
+    qInfo() << line1;
+    QString line2 = stream.readLine();
+    qInfo() << line2;
+    QString line3 = stream.readLine();
+    qInfo() << line3;
+
+    qInfo() << lessonNow;
     file.close();
+
+    QFile file2("C://QtWorking/knThreadedQuizBasic/config.txt");
+    if (!file2.open(QIODevice::Truncate | QIODevice::WriteOnly | QIODevice::Text))
+    {
+        qCritical("Open failed");
+    }
+    qInfo() << line1;
+    qInfo() << line2;
+    qInfo() << line3;
+
+    QTextStream streamOut(&file2);
+    streamOut << line1 << Qt::endl;
+    streamOut << line2 << Qt::endl;
+    streamOut << lessonNow;
+    file2.close();
 }
