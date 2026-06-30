@@ -86,7 +86,7 @@ void FileLoader::ReadLesson()
 
 void FileLoader::GetFileList(int startingNote)
 {
-
+    noteFiles.clear();
     //QList<QString> noteFiles;
     QString noteFile = "v" + QString::number(startingNote) + ".wav";
     noteFiles.append(noteFile);
@@ -105,7 +105,7 @@ void FileLoader::GetFileList(int startingNote)
     noteFile = "v" + QString::number(startingNote + 12) + ".wav";
     noteFiles.append(noteFile);
 
-    qDebug() << noteFiles;
+    qDebug() << "noteFiles = " << noteFiles;
     QString filenameChosen = ":/data/v_sounds/" + noteFile;
 
     for(int i=0;i<8;i++)

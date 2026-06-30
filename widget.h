@@ -53,6 +53,7 @@ public:
     void stop();
     void getWaveFile(QString noteFile);
     void newTest(QByteArray bufferOut);
+    void clearBuffer();
     qint64 readData(char *data, qint64 maxlen) override;
     qint64 writeData(const char *data, qint64 len) override;
     qint64 bytesAvailable() const override;
@@ -60,9 +61,6 @@ public:
     qint64 m_pos = 0;
     QByteArray m_buffer;
 
-public slots:
-    void startSound();
-    void stopSound();
 };
 
 class Widget : public QWidget
@@ -107,7 +105,7 @@ private slots:
 
 private:
     void initializeWindow();
-    void initializeAudio(const QAudioDevice &deviceInfo);
+    void initializeAudioInput(const QAudioDevice &deviceInfo);
     void initializeAudioOutput(const QAudioDevice &deviceInfo);
     void restartAudioStream();
     QMediaDevices *m_devices = nullptr;
